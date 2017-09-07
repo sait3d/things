@@ -1,0 +1,213 @@
+// итоговые суммы
+function getTotals() {
+
+	var totalsfact = 0;
+	var totalsagent = 0;
+	var totalsfull = 0;
+	var totalsplan = 0;
+	var totalsfactpercent = 0;
+	var totalNoFood = 0; //
+	var tmpvar = 0;
+	var doptypeplace = 0;
+	var doptypeplacechecked = 0;
+	var totalOnlyFood = 0; // ТОЛЬКО с питанием ДЕТИ и пенсионеры
+	// один процент общий разделения цены сайта - процент агенства
+	var tax = parseInt($('.tax').val());
+	// выбираем все поля УЧЕТНЫХ цен
+	$('.priceitemplan').each(function () {
+		totalsplan = totalsplan + parseInt($(this).val());
+	});
+	// выбираем все поля цен
+	$('.priceitem').each(function () {
+		totalsfull = totalsfull + parseInt($(this).val());
+	});
+	// цена до процента агенства
+	$('.itogo').each(function () {
+		totalsagent = totalsagent + parseInt($(this).val());
+	});
+	// посчитаем каюты места ДЕТЕЙ с питанием ОНИ не входят в комиссию агенства но ДОГОВОР!!!
+	$('.doptypeplace').each(function () {
+
+		doptypeplace = parseInt($(this).val()); // 2 или 3
+		doptypeplacechecked = $(this).attr('checked');
+
+		type4addplace = $(this).parent().parent().attr('type4addplace');
+
+		if (doptypeplace == 2 && doptypeplacechecked == 'checked' && (type4addplace == 2 || type4addplace == 3)) {
+
+			tmpvar = $(this).parent().parent().find('.priceitem').val(); // цена отгрузки
+			if (typeof tmpvar !== 'undefined') {
+				totalOnlyFood = totalOnlyFood + parseInt(tmpvar);
+			}
+		}
+	});
+	// итоговая план
+	$('#totalsplan').val(totalsplan);
+	$('#totalsfull').val(totalsfull);
+	$('#totalsagent').val(totalsagent);
+	// итоговая страховка
+	$('#totalinsurance').val(totalsagent - totalsfull);
+	// вычисляем конечный процент скидки с агентством база без страховки
+	totalsfact = totalsagent - Math.round((totalsfull - totalOnlyFood) / 100 * tax);
+	totalsfactpercent = 100 - Math.round(totalsfact / totalsplan * 100, 2);
+
+	$('#totalsfactpercent').val(totalsfactpercent);
+	$('#totalsfact').val(totalsfact);
+
+	// старые итоговые
+	var AllItogo = totalsagent;
+	$('#AllItogo').html(AllItogo);
+
+	var TaxInRub = Math.round(AllItogo * (tax) / 100);
+
+	var oplata = AllItogo - TaxInRub;
+
+	$('#TaxInRub').html(TaxInRub);
+	$('#AllAll').html(oplata);
+
+}
+
+function getSumFactItem(discitem, discitemseason, pricefull) {
+	var priceagent = 0;
+
+	priceagent = pricefull - pricefull / 100 * discitem;
+	priceagent = Math.round(priceagent - priceagent / 100 * discitemseason);
+
+	return parseInt(priceagent);
+}
+
+function getSumFactItemVisInsurance(insurance, priceagent) {
+	var priceitogo = 0;
+
+	priceitogo = Math.round(priceagent + priceagent / 100 * insurance);
+
+	return parseInt(priceitogo);
+}
+
+
+$(document).on('change', '.SelectDiscount,.SelectDiscountSeasonal,.SelectInsurance,.priceitem,.tax,.doptypeplace,.typeplace,.selectfood,.priceitemplan', function () {
+	var discitem = 0; // скидка общая
+	var discitemseason = 0; // сезонная скидка
+	var priceitemplan = 0; // сумма отгрузки
+	var pricefull = 0; // цена отгрузки
+	var priceagent = 0; // к оплате - цена факт после всех скидок и агентской комиссии
+	var tmp = 0; // незаполненность проверка
+	var seasonal = 0; //сезонность скидки
+	var type = 0;// дополнительные места тип
+	var insurance = 0; // процент страховки
+	var priceitogo = 0;
+	// изменяем доступность и значение сезонных скидок
+	// обработка изменения скидки
+	if ($(this).hasClass('SelectDiscount')) {
+		// проценты целые
+		discitem = parseInt($(this).find('option:selected').attr('v'));
+		seasonal = parseInt($(this).find('option:selected').attr('seasonal')); // сезонная ли скидка
+		discitemseason = parseInt($(this).parent().find('.SelectDiscountSeasonal').find('option:selected').attr('vs'));
+		priceitemplan = $(this).parent().next().find('.priceitemplan').val();
+		// процент страховки
+		insurance = 0;
+		tmp = $(this).parent().find('.SelectInsurance').find('option:selected').val();
+		if (typeof tmp !== 'undefined') {
+			insurance = parseInt(tmp);
+		}
+
+		// удаляем сезонные скидки если не сезонная скидка
+		if (seasonal == 0) { // && discitemseason>0
+			$(this).parent().find('.SelectDiscountSeasonal [vs="0"]').attr("selected", "selected");
+			$(this).parent().find('.SelectDiscountSeasonal [vs!="0"]').attr("disabled", "disabled");
+			discitemseason = 0;
+		} else {
+			// список скидок делаем доступным
+			$(this).parent().find('.SelectDiscountSeasonal option[disabled="disabled"]').removeAttr('disabled');
+		}
+		// пересчёт факта priceagent
+		priceagent = getSumFactItem(discitem, discitemseason, priceitemplan);
+
+		$(this).parent().next().find('.priceitem').val(priceagent);
+		// включаем сумму страховки
+		priceitogo = getSumFactItemVisInsurance(insurance, priceagent);
+
+		$(this).parent().next().find('.itogo').val(priceitogo);
+
+	} else if ($(this).hasClass('priceitem')) {
+		// ручное редактирование !!!!
+		pricefull = parseInt($(this).val());
+		// объект цена факт priceagent
+		priceagent = pricefull;
+		// обнуление скидок
+		$(this).parent().prev().find('.SelectDiscount [v="0"]').attr("selected", "selected");
+		$(this).parent().prev().find('.SelectDiscountSeasonal [vs="0"]').attr("selected", "selected");
+
+		$(this).val(priceagent); // округление
+		// страховка
+		insurance = 0;
+		tmp = $(this).parent().prev().find('.SelectInsurance').find('option:selected').val();
+		if (typeof tmp !== 'undefined') {
+			insurance = parseInt(tmp);
+		}
+		// включаем сумму страховки
+		priceitogo = getSumFactItemVisInsurance(insurance, priceagent);
+		// итого с страховкой
+		$(this).parent().find('.itogo').val(priceitogo);
+
+	} else if ($(this).hasClass('SelectDiscountSeasonal')) {
+		// проценты целые
+		discitem = parseInt($(this).parent().find('option:selected').attr('v'));
+		discitemseason = parseInt($(this).find('option:selected').attr('vs'));
+		priceitemplan = $(this).parent().next().find('.priceitemplan').val();
+		// пересчёт факта priceagent от плановой
+		priceagent = getSumFactItem(discitem, discitemseason, priceitemplan);
+		// процент страховки
+		insurance = 0;
+		tmp = $(this).parent().find('.SelectInsurance').find('option:selected').val();
+		if (typeof tmp !== 'undefined') {
+			insurance = parseInt(tmp);
+		}
+
+		$(this).parent().next().find('.priceitem').val(priceagent);
+		// включаем сумму страховки
+		priceitogo = getSumFactItemVisInsurance(insurance, priceagent);
+
+		$(this).parent().next().find('.itogo').val(priceitogo);
+
+	} else if ($(this).hasClass('SelectInsurance')) {
+		// страховка
+		insurance = parseInt($(this).find('option:selected').val());
+		priceagent = parseInt($(this).parent().next().find('.priceitem').val());
+		// включаем сумму страховки
+		priceitogo = getSumFactItemVisInsurance(insurance, priceagent);
+		// итого с страховкой
+		$(this).parent().next().find('.itogo').val(priceitogo);
+
+	} else if ($(this).hasClass('typeplace') || $(this).hasClass('doptypeplace')) {
+
+		type = parseInt($(this).val());
+
+		if (type == 0) {
+			$(this).parent().parent().find('.selectfood').val(-1); // без питания
+
+			$(this).parent().parent().find('.priceitem').val(0); // цена отгрузки
+
+			$(this).parent().parent().find('.itogo').val(0); // цена с агентским
+
+		} else {
+
+			$(this).parent().parent().find('.selectfood').val(-2); // нет рассадки
+
+			priceitemplan = parseInt($(this).parent().parent().find('.priceitemplan').val()); // плановая цена
+
+			$(this).parent().parent().find('.priceitem').val(priceitemplan);
+			$(this).parent().parent().find('.itogo').val(priceitemplan);
+		}
+		//CheckFreeDopMesto(); подумать, что с этим делать - так то не ограничиваем получается количество доп мест в счете
+	} else if ($(this).hasClass('selectfood')) {
+		//CheckFreeDopMesto(); вообще удалить эту ерунду
+	} else if ($(this).hasClass('priceitemplan')) {
+
+	}
+	// вызов .tax только общий пересчёт итоговой суммы
+
+	//alert('2 change priceitem= '+pricefull+' discitem='+discitem+' priceagent='+priceagent+' tax='+tax);
+	getTotals();
+
+});
