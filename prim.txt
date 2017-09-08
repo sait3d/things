@@ -1,3 +1,7 @@
+/*
+* подстройка под разметку заказчика (построенную много лет назад на table), для встраивания расчета наценки
+*/
+
 // итоговые суммы
 function getTotals() {
 
@@ -211,4 +215,74 @@ $(document).on('change', '.SelectDiscount,.SelectDiscountSeasonal,.SelectInsuran
 	getTotals();
 
 });
-примерчик
+
+/**
+*
+* подтверждение авторизации для модуля comprofiler встроенного joomla на стороннем сайте, что бы была возможность зайти и на основной
+*/
+    // установка параметров подверждения для ссылки из письма
+    public function setConfirmCbactivation() {
+
+        $err = '';
+        if($this->getCbactivation()) {
+            // устанавливаем коды активации, блок и отправку емайл
+            $this->block = 1;
+            $this->sendEmail = 1;
+            $this->confirmed = 0;
+
+            try {
+                $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                $this->pdo->beginTransaction();
+                $this->pdo->exec("UPDATE zhob_users SET block=$this->block,sendEmail=$this->sendEmail,activation='$this->activation' WHERE id=$this->id");
+                $this->pdo->exec("UPDATE zhob_comprofiler SET confirmed=$this->confirmed,cbactivation='$this->cbactivation' WHERE id=$this->id");
+                $this->pdo->commit();
+
+            } catch (Exception $e) {
+                $this->pdo->rollBack();
+                $err = "Ошибка: " . $e->getMessage();
+            }
+        }
+        return $err;
+    }
+    // подтверждение по ссылке из письма
+    public function confirmCbactivation($confirmcode) {
+        // из хеша с смещением
+        $id = $this->getUserIdFromActivationCode($confirmcode);
+        $err = '';
+        if($id) {
+            $data = array('id'=>$id);
+            $this->getUser($data);
+            // удаляем коды активации, блок и отправку емайл
+            $this->cbactivation = '';
+            $this->activation = '';
+            $this->block = 0;
+            $this->sendEmail = 0;
+            $this->confirmed = 1;
+
+            try {
+                $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                $this->pdo->beginTransaction();
+                $this->pdo->exec("UPDATE zhob_users SET block=$this->block,sendEmail=$this->sendEmail,activation='$this->activation' WHERE id=$this->id");
+                $this->pdo->exec("UPDATE zhob_comprofiler SET confirmed=$this->confirmed,cbactivation='$this->cbactivation' WHERE id=$this->id");
+                $this->pdo->commit();
+
+            } catch (Exception $e) {
+                $this->pdo->rollBack();
+                $err = "Ошибка: " . $e->getMessage();
+            }
+        }
+        return $err;
+    }
+/**
+* передача параметров в PDO
+*/
+
+        $stm = $this->pdo->prepare($sql);
+
+        if(isset($id_user)) $stm->bindParam(':id_user',$id_user,PDO::PARAM_INT);
+        if(isset($status)) $stm->bindParam(':status',$status,PDO::PARAM_INT);
+        if(isset($id_kontragent)) $stm->bindParam(':id_kontragent',$id_kontragent,PDO::PARAM_INT);
+        if(isset($num)) $stm->bindParam(':num',$num,PDO::PARAM_STR);
+	
