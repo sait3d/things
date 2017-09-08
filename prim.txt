@@ -1,4 +1,29 @@
 /*
+* хранимые процедуры - для производительности SQL
+*/
+CREATE DEFINER=`work`@`%` FUNCTION `aa_schet_get_num`(`YEAR_IN` INT, `YEAR_IN_SHORT` TINYINT)
+	RETURNS varchar(10) CHARSET utf8
+	LANGUAGE SQL
+	NOT DETERMINISTIC
+	MODIFIES SQL DATA
+	SQL SECURITY DEFINER
+	COMMENT 'функция начального формирования записи счета'
+BEGIN
+	DECLARE CURRENT_ID_CALC INT(11);
+	DECLARE NUM VARCHAR(10);
+
+	SET CURRENT_ID_CALC=0;
+	
+	SELECT current_id FROM aa_year_counter WHERE year=YEAR_IN INTO CURRENT_ID_CALC;
+	UPDATE aa_year_counter SET current_id=current_id+1 WHERE year=YEAR_IN;	
+	
+	SET CURRENT_ID_CALC = CURRENT_ID_CALC+1;	
+	SET NUM = CONCAT(CURRENT_ID_CALC,'-',YEAR_IN_SHORT);
+
+	RETURN NUM;
+END
+
+/* JS
 * подстройка под разметку заказчика (построенную много лет назад на table), для встраивания расчета наценки
 */
 
@@ -216,7 +241,7 @@ $(document).on('change', '.SelectDiscount,.SelectDiscountSeasonal,.SelectInsuran
 
 });
 
-/**
+/** PHP PDO
 *
 * подтверждение авторизации для модуля comprofiler встроенного joomla на стороннем сайте, что бы была возможность зайти и на основной
 */
