@@ -1,0 +1,27 @@
+#wrapper {
+    width: 960px;
+    margin: 0 auto;
+}
+#table_order {border-collapse: collapse;}
+#table_order td {
+    border: 1px solid #333333;
+}
+#table_order th {text-align: left;}
+
+.deleteline {
+    cursor: pointer;
+}
+.message {
+    border: 1px solid #F6F7F9;
+    background-color: #FDFCEE;
+    color:green;
+    padding: 5px;
+    border-radius: 5px;
+}
+.border1 {border: 1px solid #333333;}
+.w100 {width: 100%;}
+.w120px {width: 120px;}
+.w40px{width: 40px;}
+.margintop10 {margin-top:10px;}
+.floatright {float:right;}
+.talignright{text-align:right;}
