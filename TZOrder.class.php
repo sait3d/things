@@ -151,6 +151,61 @@ FROM z_customer";
 
     }
 
+    // новый заказ
+    public function insertOrder($data) {
+
+        $id_order = 0;
+        $id_customer = (int) $data[0]['id_customer'];
+
+        unset($data[0]);
+        // заполнение шапки заказа
+
+        // запись шапки заказа
+        $sql="INSERT INTO z_order
+SET orderdate=DATE_FORMAT(NOW(),'%Y-%m-%d'),
+id_user=:id_user,
+id_customer=:$id_customer,
+orderprice=:orderprice";
+
+        $stm = $this->pdo->prepare($sql);
+
+        $stm->bindParam(':id_user',$id_user,PDO::PARAM_INT);
+        $stm->bindParam(':id_customer',$id_customer,PDO::PARAM_INT);
+        $stm->bindParam(':orderprice',$orderprice,PDO::PARAM_INT);
+
+        if($stm->execute()) {
+            $id_order = $this->pdo->lastInsertId();
+        } else {
+            return -1;
+        }
+        // заполнение таблицы заказа
+        $sql="INSERT INTO z_order_table
+SET id_order=:id_order,
+numline=:numline,
+id_service=:id_service,
+price=:price";
+
+        $stm = $this->pdo->prepare($sql);
+
+        $numline = 0;
+
+        foreach($data AS $row) {
+
+            $numline++;
+
+            $stm->bindParam(':id_service',$row['id_service'],PDO::PARAM_INT);
+            $stm->bindParam(':price',$row['price'],PDO::PARAM_INT);
+            $stm->bindParam(':id_order',$id_order,PDO::PARAM_INT);
+            $stm->bindParam(':numline',$numline,PDO::PARAM_INT);
+
+            if($stm->execute()) {
+                $orderprice +=(int)$row['price'];
+            } else {
+                return -1;
+            }
+        }
+
+    }
     // изменение заказа
     public function updateOrder($data) {
 
