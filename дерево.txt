@@ -1,0 +1,54 @@
+  function array2tree($source_arr, $pid, $key_children='children', $key_id='id', $key_pid='parent_id')
+    {
+        $tree=array();
+
+        if (empty($source_arr))
+            return $tree;
+
+        _array2treer($source_arr, $tree, $pid, $pid, $key_children, $key_id, $key_pid);
+
+        return $tree;
+    }
+
+    function _array2treer($source_arr, &$_this, $pid, $_this_id, $key_children, $key_id, $key_pid)
+    {
+
+        // populate current children
+        foreach ($source_arr as $value)
+            if ($value[$key_pid]==$_this_id)
+                $_this[$key_children][$value[$key_id]]=$value;
+//print('$_this[$key_children]='.$value.'<br/>');
+        if (isset($_this[$key_children]))
+        {
+            // populate children of the current children
+            foreach ($_this[$key_children] as $value)
+                _array2treer($source_arr, $_this[$key_children][$value[$key_id]], $pid, $value[$key_id], $key_children, $key_id, $key_pid);
+
+            // make the tree root look pretty (more convenient to use such tree)
+            if ($_this_id===$pid)
+                $_this=$_this[$key_children];
+
+        }
+    }
+
+
+    $family = [
+        ['id' => 1, 'name' => 'Сын Вася', 'parent_id' => 2],
+        ['id' => 3, 'name' => 'Дедушка Иван', 'parent_id' => 0],
+        ['id' => 2, 'name' => 'Папа Коля', 'parent_id' => 3],
+        ['id' => 4, 'name' => 'Дочь Нина', 'parent_id' => 2],
+        ['id' => 5, 'name' => 'Внучка Аня', 'parent_id' => 1],
+    ];
+
+    print('<pre>'); print_r($family);print('</pre>');
+
+    $tree=array2tree($family,0);
+
+
+    ?>
+
+    <p>Результат:</p>
+
+    <?php
+    print('<pre>'); print_r($tree);print('</pre>');
+    ?>
